@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useState } from "react";
 import {
   ScrollView,
@@ -125,7 +126,7 @@ export default function ShipScreen() {
 
       <TouchableOpacity
         style={styles.submitBtn}
-        onPress={() => router.push("/ride-selection")}
+        onPress={() => router.push("/logistics-negotiation")}
       >
         <Text style={styles.submitText}>Get Delivery Quotes</Text>
         <Ionicons name="arrow-forward" size={20} color="#fff" />
