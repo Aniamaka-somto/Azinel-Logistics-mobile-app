@@ -65,14 +65,16 @@ export default function RideSelectionScreen() {
 
       {/* Route Info */}
       <View style={styles.routeSection}>
-        <Text style={styles.route}>PHC → Abuja</Text>
+        <View style={styles.routeRow}>
+          <Text style={styles.route}>PHC → Abuja</Text>
+          <TouchableOpacity style={styles.filterIcon}>
+            <Ionicons name="options-outline" size={20} color="#E53935" />
+          </TouchableOpacity>
+        </View>
         <Text style={styles.routeMeta}>OCT 24 • 1 PASSENGER</Text>
-        <TouchableOpacity style={styles.filterIcon}>
-          <Ionicons name="tune" size={20} color="#E53935" />
-        </TouchableOpacity>
       </View>
 
-      {/* Filter Tabs */}
+      {/* Filter Tabs - Shorter Height */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -106,6 +108,7 @@ export default function RideSelectionScreen() {
       >
         {drivers.map((driver) => (
           <View key={driver.id} style={styles.driverCard}>
+            {/* Top Section: Driver Info */}
             <View style={styles.driverHeader}>
               <Image source={{ uri: driver.image }} style={styles.driverImg} />
               <View style={styles.driverInfo}>
@@ -124,27 +127,24 @@ export default function RideSelectionScreen() {
               </View>
             </View>
 
+            {/* Bottom Section: Price & Action */}
             <View style={styles.priceRow}>
-              <View>
+              <View style={styles.priceContainer}>
                 <Text style={styles.price}>{driver.price}</Text>
                 <Text style={styles.feature}>{driver.feature}</Text>
               </View>
-              <View style={styles.actionButtons}>
-                <TouchableOpacity style={styles.negotiateBtn}>
-                  <Text style={styles.negotiateText}>NEGOTIATE</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.bookBtn}
-                  onPress={() => router.push("/live-tracking")}
-                >
-                  <Text style={styles.bookText}>Book</Text>
-                </TouchableOpacity>
-              </View>
+
+              <TouchableOpacity
+                style={styles.bookBtn}
+                onPress={() => router.push("/ride-negotiation")}
+              >
+                <Text style={styles.bookText}>Select</Text>
+              </TouchableOpacity>
             </View>
           </View>
         ))}
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 120 }} />
       </ScrollView>
     </View>
   );
@@ -177,6 +177,11 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 10,
   },
+  routeRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   route: {
     color: "#fff",
     fontSize: 32,
@@ -191,9 +196,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   filterIcon: {
-    position: "absolute",
-    right: 20,
-    top: 10,
     width: 44,
     height: 44,
     backgroundColor: "#1A1A1A",
@@ -204,16 +206,24 @@ const styles = StyleSheet.create({
   filterRow: {
     paddingHorizontal: 20,
     marginBottom: 20,
+    flexGrow: 0, // stop it from expanding
+    flexShrink: 1, // allow it to shrink
+    maxHeight: 60, // hard cap the container height
   },
   filterChip: {
-    paddingHorizontal: 28,
-    paddingVertical: 12,
-    borderRadius: 25,
+    width: 90,
+    height: 36, // was 60 — this was the culprit
+    borderRadius: 15,
     backgroundColor: "#1A1A1A",
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
+    borderWidth: 1,
+    borderColor: "#3A3A3A",
   },
   filterChipActive: {
     backgroundColor: "#E53935",
+    borderColor: "#E53935",
   },
   filterChipText: {
     color: "#B0B0B0",
@@ -239,12 +249,15 @@ const styles = StyleSheet.create({
   driverHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#2A2A2A",
   },
   driverImg: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: "#2A2A2A",
   },
   driverInfo: {
@@ -253,7 +266,7 @@ const styles = StyleSheet.create({
   },
   driverName: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
     marginBottom: 6,
   },
@@ -269,9 +282,9 @@ const styles = StyleSheet.create({
   },
   carBadge: {
     backgroundColor: "#2A2A2A",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
   },
   carText: {
     color: "#B0B0B0",
@@ -296,49 +309,33 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: "#2A2A2A",
-    paddingTop: 16,
+  },
+  priceContainer: {
+    flex: 1,
   },
   price: {
     color: "#fff",
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "900",
   },
   feature: {
     color: "#B0B0B0",
-    fontSize: 12,
+    fontSize: 11,
     marginTop: 4,
     fontStyle: "italic",
   },
-  actionButtons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  negotiateBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: "#2A1A1A",
-    borderWidth: 1,
-    borderColor: "#E53935",
-  },
-  negotiateText: {
-    color: "#E53935",
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 1,
-  },
   bookBtn: {
     backgroundColor: "#E53935",
-    paddingHorizontal: 28,
-    paddingVertical: 12,
+    paddingHorizontal: 32,
+    paddingVertical: 14,
     borderRadius: 10,
+    minWidth: 100,
+    alignItems: "center",
   },
   bookText: {
     color: "#fff",
     fontWeight: "700",
     fontSize: 14,
+    letterSpacing: 0.5,
   },
 });

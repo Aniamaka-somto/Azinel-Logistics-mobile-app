@@ -11,14 +11,7 @@ import {
 export default function ProfileScreen() {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <Ionicons name="menu" size={24} color="#fff" />
-        <Text style={styles.logo}>AZINEL</Text>
-        <Image
-          source={{ uri: "https://i.pravatar.cc/150?img=11" }}
-          style={styles.profileImg}
-        />
-      </View>
+      <View style={styles.header}></View>
 
       {/* Profile Info */}
       <View style={styles.profileSection}>

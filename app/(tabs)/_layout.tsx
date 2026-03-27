@@ -42,7 +42,7 @@ export default function TabLayout() {
         options={{
           title: "TRIPS",
           tabBarIcon: ({ color }) => (
-            <Ionicons name="route" size={24} color={color} />
+            <Ionicons name="navigate-outline" size={24} color={color} />
           ),
         }}
       />
@@ -51,7 +51,7 @@ export default function TabLayout() {
         options={{
           title: "SHIP",
           tabBarIcon: ({ color }) => (
-            <Ionicons name="truck" size={24} color={color} />
+            <Ionicons name="bus-outline" size={24} color={color} />
           ),
         }}
       />

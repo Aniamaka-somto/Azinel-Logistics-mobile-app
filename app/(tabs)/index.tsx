@@ -1,16 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import {
   Image,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 
 export default function HomeScreen() {
   const router = useRouter();
+  const [pickup, setPickup] = useState("Port Harcourt");
+  const [destination, setDestination] = useState("");
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -21,28 +25,44 @@ export default function HomeScreen() {
           <Text style={styles.userName}>Chidinma 👋</Text>
         </View>
         <TouchableOpacity style={styles.notificationBtn}>
-          <Ionicons name="notifications" size={24} color="#fff" />
+          <Ionicons name="notifications-outline" size={24} color="#fff" />
           <View style={styles.notificationDot} />
         </TouchableOpacity>
       </View>
 
       {/* Search Box */}
       <View style={styles.searchBox}>
+        {/* Pickup Input */}
         <View style={styles.inputField}>
           <Ionicons name="location" size={24} color="#E53935" />
           <View style={styles.inputTextContainer}>
             <Text style={styles.inputLabel}>PICKUP POINT</Text>
-            <Text style={styles.inputValue}>Port Harcourt</Text>
+            <TextInput
+              style={styles.inputValue}
+              value={pickup}
+              onChangeText={setPickup}
+              placeholderTextColor="#B0B0B0"
+            />
           </View>
         </View>
+
         <View style={styles.divider} />
+
+        {/* Destination Input */}
         <View style={styles.inputField}>
-          <Ionicons name="flag" size={24} color="#B0B0B0" />
+          <Ionicons name="flag-outline" size={24} color="#B0B0B0" />
           <View style={styles.inputTextContainer}>
             <Text style={styles.inputLabel}>DESTINATION</Text>
-            <Text style={styles.inputValuePlaceholder}>Where to?</Text>
+            <TextInput
+              style={styles.inputValuePlaceholder}
+              value={destination}
+              onChangeText={setDestination}
+              placeholder="Where to?"
+              placeholderTextColor="#B0B0B0"
+            />
           </View>
         </View>
+
         <TouchableOpacity
           style={styles.findBtn}
           onPress={() => router.push("/ride-selection")}
@@ -63,7 +83,7 @@ export default function HomeScreen() {
           <Text style={[styles.actionText, styles.actionTextActive]}>Ride</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionBtn}>
-          <Ionicons name="package" size={24} color="#B0B0B0" />
+          <Ionicons name="cube-outline" size={24} color="#B0B0B0" />
           <Text style={styles.actionText}>Logistics</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionBtn}>
@@ -135,7 +155,10 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000000" },
+  container: {
+    flex: 1,
+    backgroundColor: "#000000",
+  },
   header: {
     padding: 20,
     paddingTop: 60,
@@ -149,7 +172,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     letterSpacing: 1,
   },
-  userName: { color: "#fff", fontSize: 28, fontWeight: "bold", marginTop: 4 },
+  userName: {
+    color: "#fff",
+    fontSize: 28,
+    fontWeight: "bold",
+    marginTop: 4,
+  },
   notificationBtn: {
     width: 48,
     height: 48,
@@ -180,21 +208,35 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 16,
   },
-  inputTextContainer: { marginLeft: 12, flex: 1 },
+  inputTextContainer: {
+    marginLeft: 12,
+    flex: 1,
+  },
   inputLabel: {
     color: "#B0B0B0",
     fontSize: 10,
     fontWeight: "600",
     letterSpacing: 1,
   },
-  inputValue: { color: "#fff", fontSize: 16, fontWeight: "600", marginTop: 4 },
+  inputValue: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginTop: 4,
+    padding: 0,
+  },
   inputValuePlaceholder: {
     color: "#B0B0B0",
     fontSize: 16,
     fontWeight: "600",
     marginTop: 4,
+    padding: 0,
   },
-  divider: { height: 1, backgroundColor: "#3A3A3A", marginVertical: 8 },
+  divider: {
+    height: 1,
+    backgroundColor: "#3A3A3A",
+    marginVertical: 8,
+  },
   findBtn: {
     backgroundColor: "#E53935",
     padding: 18,
@@ -210,7 +252,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginRight: 10,
   },
-  actionsRow: { paddingHorizontal: 20, marginBottom: 20 },
+  actionsRow: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
   actionBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -221,10 +266,20 @@ const styles = StyleSheet.create({
     marginRight: 12,
     gap: 8,
   },
-  actionBtnActive: { backgroundColor: "#E53935" },
-  actionText: { color: "#B0B0B0", fontSize: 14, fontWeight: "600" },
-  actionTextActive: { color: "#fff" },
-  section: { padding: 20 },
+  actionBtnActive: {
+    backgroundColor: "#E53935",
+  },
+  actionText: {
+    color: "#B0B0B0",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  actionTextActive: {
+    color: "#fff",
+  },
+  section: {
+    padding: 20,
+  },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -236,7 +291,11 @@ const styles = StyleSheet.create({
     color: "#B0B0B0",
     letterSpacing: 1,
   },
-  viewAll: { color: "#E53935", fontSize: 12, fontWeight: "600" },
+  viewAll: {
+    color: "#E53935",
+    fontSize: 12,
+    fontWeight: "600",
+  },
   tripCard: {
     backgroundColor: "#1A1A1A",
     padding: 20,
@@ -251,10 +310,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 15,
   },
-  routeContainer: { flexDirection: "row", alignItems: "center", gap: 10 },
-  routeFrom: { color: "#fff", fontSize: 24, fontWeight: "bold" },
-  routeTo: { color: "#fff", fontSize: 24, fontWeight: "bold" },
-  price: { color: "#E53935", fontSize: 20, fontWeight: "bold" },
+  routeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  routeFrom: {
+    color: "#fff",
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+  routeTo: {
+    color: "#fff",
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+  price: {
+    color: "#E53935",
+    fontSize: 20,
+    fontWeight: "bold",
+  },
   tripMeta: {
     flexDirection: "row",
     alignItems: "center",
@@ -267,15 +342,25 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 6,
   },
-  metaText: { color: "#B0B0B0", fontSize: 12 },
+  metaText: {
+    color: "#B0B0B0",
+    fontSize: 12,
+  },
   metaBadge: {
     backgroundColor: "#2A2A2A",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
   },
-  metaBadgeText: { color: "#fff", fontSize: 12, fontWeight: "600" },
-  tripType: { color: "#B0B0B0", fontSize: 12 },
+  metaBadgeText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  tripType: {
+    color: "#B0B0B0",
+    fontSize: 12,
+  },
   driverInfo: {
     flexDirection: "row",
     alignItems: "center",
@@ -283,16 +368,30 @@ const styles = StyleSheet.create({
     borderTopColor: "#3A3A3A",
     paddingTop: 15,
   },
-  driverImg: { width: 44, height: 44, borderRadius: 22 },
-  driverDetails: { flex: 1, marginLeft: 12 },
-  driverName: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  driverImg: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
+  driverDetails: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  driverName: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 14,
+  },
   ratingContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
     marginTop: 4,
   },
-  rating: { color: "#B0B0B0", fontSize: 12 },
+  rating: {
+    color: "#B0B0B0",
+    fontSize: 12,
+  },
   chatBtn: {
     width: 40,
     height: 40,
@@ -311,7 +410,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  mapPlaceholder: { alignItems: "center" },
+  mapPlaceholder: {
+    alignItems: "center",
+  },
   mapText: {
     color: "#B0B0B0",
     fontSize: 12,

@@ -15,7 +15,7 @@ export default function TripsScreen() {
       date: "Oct 12 • 09:30 AM",
       price: "₦45,000",
       status: "Completed",
-      icon: "truck",
+      icon: "bus-outline",
     },
     {
       id: 2,
@@ -23,7 +23,7 @@ export default function TripsScreen() {
       date: "Oct 10 • 06:15 PM",
       price: "₦12,400",
       status: "Completed",
-      icon: "route",
+      icon: "navigate-outline",
     },
     {
       id: 3,
@@ -39,7 +39,7 @@ export default function TripsScreen() {
       date: "Starts in 2h 15m",
       price: "₦68,200",
       status: "Upcoming",
-      icon: "truck",
+      icon: "bus-outline",
     },
   ];
 

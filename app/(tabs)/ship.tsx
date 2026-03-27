@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
 export default function ShipScreen() {
   const [selectedPackage, setSelectedPackage] = useState("medium");
   const [deliveryType, setDeliveryType] = useState("door");
@@ -124,7 +123,10 @@ export default function ShipScreen() {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.submitBtn}>
+      <TouchableOpacity
+        style={styles.submitBtn}
+        onPress={() => router.push("/ride-selection")}
+      >
         <Text style={styles.submitText}>Get Delivery Quotes</Text>
         <Ionicons name="arrow-forward" size={20} color="#fff" />
       </TouchableOpacity>
