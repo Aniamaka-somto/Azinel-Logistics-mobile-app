@@ -5,8 +5,10 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import BottomSheet from "../../../components/BottomSheet";
+import ServiceSwitcher, {
+  ServiceMode,
+} from "../../../components/ServiceSwitcher";
+import DraggableSheet from "../../../components/DraggableSheet";
 import { COLORS, RADIUS, SPACING } from "../../../constants/theme";
 import { useRideStore } from "../../../store/useRideStore";
 
@@ -22,6 +24,7 @@ export default function Home() {
     latitude: number;
     longitude: number;
   } | null>(null);
+  const [serviceMode, setServiceMode] = useState<ServiceMode>("ride");
   const { pickup, destination } = useRideStore();
 
   useEffect(() => {
@@ -78,38 +81,39 @@ export default function Home() {
       </SafeAreaView>
 
       {/* Bottom Sheet */}
-      <BottomSheet height={260}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
+      <DraggableSheet>
+        <ServiceSwitcher active={serviceMode} onChange={setServiceMode} />
 
-        <View style={styles.quickRow}>
-          {[
-            { label: "Home", icon: "home-outline" },
-            { label: "Work", icon: "briefcase-outline" },
-            { label: "Airport", icon: "airplane-outline" },
-          ].map((item) => (
-            <TouchableOpacity
-              key={item.label}
-              style={styles.quickChip}
-              onPress={() => router.push("/(user)/search")}
-            >
-              <Ionicons
-                name={item.icon as any}
-                size={18}
-                color={COLORS.primary}
-              />
-              <Text style={styles.chipLabel}>{item.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {serviceMode === "ride" && (
+          <TouchableOpacity
+            style={styles.bigBtn}
+            onPress={() => router.push("/(user)/search")}
+          >
+            <Ionicons name="navigate" size={18} color="#fff" />
+            <Text style={styles.bigBtnText}>Choose Destination</Text>
+          </TouchableOpacity>
+        )}
 
-        <TouchableOpacity
-          style={styles.bigBtn}
-          onPress={() => router.push("/(user)/search")}
-        >
-          <Ionicons name="navigate" size={18} color="#fff" />
-          <Text style={styles.bigBtnText}>Choose Destination</Text>
-        </TouchableOpacity>
-      </BottomSheet>
+        {serviceMode === "intercity" && (
+          <TouchableOpacity
+            style={styles.bigBtn}
+            onPress={() => router.push("/(user)/intercity")}
+          >
+            <Ionicons name="bus" size={18} color="#fff" />
+            <Text style={styles.bigBtnText}>Book Intercity Ride</Text>
+          </TouchableOpacity>
+        )}
+
+        {serviceMode === "logistics" && (
+          <TouchableOpacity
+            style={styles.bigBtn}
+            onPress={() => router.push("/(user)/logistics")}
+          >
+            <Ionicons name="cube" size={18} color="#fff" />
+            <Text style={styles.bigBtnText}>Send a Package</Text>
+          </TouchableOpacity>
+        )}
+      </DraggableSheet>
     </View>
   );
 }
