@@ -63,7 +63,7 @@ export default function Home() {
       {/* Top bar */}
       <SafeAreaView style={styles.topBar} edges={["top"]}>
         <View style={styles.topRow}>
-          <Text style={styles.logo}>⚡ BoltClone</Text>
+          <Text style={styles.logo}>Aziniel</Text>
           <TouchableOpacity style={styles.avatar}>
             <Ionicons name="person" size={18} color={COLORS.primary} />
           </TouchableOpacity>
