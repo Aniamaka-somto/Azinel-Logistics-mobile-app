@@ -54,7 +54,7 @@ export default function Signup() {
       // await AsyncStorage.setItem("token", res.data.token);
 
       await new Promise((r) => setTimeout(r, 1500)); // mock
-      router.replace("/");
+      router.replace("/select-role");
     } catch (e) {
       setError("Something went wrong. Please try again.");
     } finally {

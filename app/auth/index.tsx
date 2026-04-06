@@ -43,7 +43,7 @@ export default function Login() {
       // await AsyncStorage.setItem("token", res.data.token);
 
       await new Promise((r) => setTimeout(r, 1500)); // mock
-      router.replace("/"); // goes to role select
+      router.replace("/select-role"); // goes to role select
     } catch (e) {
       setError("Invalid credentials. Please try again.");
     } finally {
@@ -69,7 +69,7 @@ export default function Login() {
             entering={FadeInDown.duration(400)}
             style={styles.header}
           >
-            <Text style={styles.logo}>⚡ Azinel</Text>
+            <Text style={styles.logo}>Azinel</Text>
             <Text style={styles.title}>Welcome back</Text>
             <Text style={styles.subtitle}>Sign in to continue</Text>
           </Animated.View>
