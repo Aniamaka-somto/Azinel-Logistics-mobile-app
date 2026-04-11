@@ -17,6 +17,8 @@ import { StatusBar } from "expo-status-bar";
 
 import { COLORS, SPACING, RADIUS } from "../../constants/theme";
 import Input from "../../components/Input";
+import { loginUser } from "../../services/api"; // ← real API
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Login() {
   const [phone, setPhone] = useState("");
@@ -38,14 +40,35 @@ export default function Login() {
 
     setLoading(true);
     try {
-      // TODO: replace with real API call
-      // const res = await api.post("/auth/login", { phone, password });
-      // await AsyncStorage.setItem("token", res.data.token);
+      const res = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/auth/login`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone, password }),
+        },
+      );
 
-      await new Promise((r) => setTimeout(r, 1500)); // mock
-      router.replace("/select-role"); // goes to role select
+      const json = await res.json();
+
+      if (!res.ok) {
+        setError(json.message ?? "Invalid credentials.");
+        return;
+      }
+
+      await AsyncStorage.setItem("token", json.data.token);
+      await AsyncStorage.setItem("userId", json.data.user.id);
+      await AsyncStorage.setItem("userRole", json.data.user.role);
+      await AsyncStorage.setItem("userName", json.data.user.fullName);
+
+      // Route based on role
+      if (json.data.user.role === "DRIVER") {
+        router.replace("/(driver)/(tabs)");
+      } else {
+        router.replace("/(user)/(tabs)");
+      }
     } catch (e) {
-      setError("Invalid credentials. Please try again.");
+      setError("Could not connect to server. Check your connection.");
     } finally {
       setLoading(false);
     }

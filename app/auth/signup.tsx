@@ -17,6 +17,8 @@ import { StatusBar } from "expo-status-bar";
 
 import { COLORS, SPACING, RADIUS } from "../../constants/theme";
 import Input from "../../components/Input";
+import { registerUser } from "../../services/api"; // ← real API
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type Role = "user" | "driver";
 
@@ -47,16 +49,41 @@ export default function Signup() {
 
     setLoading(true);
     try {
-      // TODO: replace with real API call
-      // const res = await api.post("/auth/signup", {
-      //   fullName, phone, email, password, role
-      // });
-      // await AsyncStorage.setItem("token", res.data.token);
+      const res = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/auth/register`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fullName,
+            phone,
+            email: email || undefined,
+            password,
+            role: role.toUpperCase(),
+          }),
+        },
+      );
 
-      await new Promise((r) => setTimeout(r, 1500)); // mock
-      router.replace("/select-role");
+      const json = await res.json();
+
+      if (!res.ok) {
+        setError(json.message ?? "Registration failed.");
+        return;
+      }
+
+      await AsyncStorage.setItem("token", json.data.token);
+      await AsyncStorage.setItem("userId", json.data.user.id);
+      await AsyncStorage.setItem("userRole", json.data.user.role);
+      await AsyncStorage.setItem("userName", json.data.user.fullName);
+
+      // Route based on role
+      if (json.data.user.role === "DRIVER") {
+        router.replace("/(driver)/(tabs)");
+      } else {
+        router.replace("/(user)/(tabs)");
+      }
     } catch (e) {
-      setError("Something went wrong. Please try again.");
+      setError("Could not connect to server. Check your connection.");
     } finally {
       setLoading(false);
     }

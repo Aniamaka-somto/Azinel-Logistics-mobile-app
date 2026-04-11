@@ -15,14 +15,14 @@ export default function RoleSelect() {
       <View style={styles.actions}>
         <Button
           title="I'm a Passenger"
-          onPress={() => router.push("/(user)/(tabs)")}
+          onPress={() => router.replace("/(user)/(tabs)")}
         />
 
         <View style={{ height: SPACING.sm }} />
 
         <Button
           title="I'm a Driver"
-          onPress={() => router.push("/(driver)/(tabs)")}
+          onPress={() => router.replace("/(driver)/(tabs)")}
           variant="outline"
         />
       </View>

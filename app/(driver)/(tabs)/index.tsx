@@ -1,16 +1,69 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useState } from "react";
-import { StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
+import { router, useFocusEffect } from "expo-router";
+import { useState, useEffect } from "react";
+import {
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+  BackHandler,
+} from "react-native";
 import MapView from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import BottomSheet from "../../../components/BottomSheet";
 import { COLORS, RADIUS, SPACING } from "../../../constants/theme";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { setDriverStatus } from "../../../services/api";
+import { connectSocket } from "../../../services/socket";
 
 export default function DriverHome() {
   const [online, setOnline] = useState(false);
-  const [rideRequest, setRideRequest] = useState(true); // mock request appears when online
+  const [loading, setLoading] = useState(false);
+  const [rideRequest, setRideRequest] = useState<any>(null); // mock request appears when online
+  const handleToggleStatus = async (value: boolean) => {
+    await setDriverStatus(value ? "ONLINE" : "OFFLINE");
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const res = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/driver/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            status: value ? "ONLINE" : "OFFLINE",
+          }),
+        },
+      );
+
+      if (res.ok) {
+        setOnline(value);
+      }
+    } catch (err) {
+      console.error("Failed to update status", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    const setupSocket = async () => {
+      const userId = await AsyncStorage.getItem("userId");
+      if (!userId) return;
+      const socket = await connectSocket(userId, "driver");
+
+      socket.on("booking:new", (booking: any) => {
+        // Only show if driver is online
+        if (online) setRideRequest(booking);
+      });
+    };
+
+    setupSocket();
+  }, [online]);
 
   return (
     <View style={styles.container}>
@@ -40,7 +93,8 @@ export default function DriverHome() {
             </Text>
             <Switch
               value={online}
-              onValueChange={setOnline}
+              onValueChange={handleToggleStatus}
+              disabled={loading}
               trackColor={{ false: "#E0E0E0", true: "#D4F7E0" }}
               thumbColor={online ? "#22C55E" : "#BDBDBD"}
             />
@@ -56,27 +110,36 @@ export default function DriverHome() {
               <Ionicons name="flash" size={14} color="#fff" />
               <Text style={styles.requestBadgeText}>New Ride</Text>
             </View>
-            <Text style={styles.requestPrice}>₦1,500</Text>
+            <Text style={styles.requestPrice}>
+              ₦{rideRequest.estimatedPrice?.toLocaleString()}
+            </Text>
           </View>
 
           <View style={styles.requestRoute}>
             <View style={styles.routeRow}>
               <View style={[styles.dot, { backgroundColor: COLORS.primary }]} />
-              <Text style={styles.routeText}>Ring Road, Benin City</Text>
+              <Text style={styles.routeText}>
+                {rideRequest.pickupAddress ?? "Pickup Location"}
+              </Text>
             </View>
             <View style={styles.routeLine} />
             <View style={styles.routeRow}>
               <View style={[styles.dot, { backgroundColor: "#111" }]} />
-              <Text style={styles.routeText}>University of Benin</Text>
+              <Text style={styles.routeText}>
+                {rideRequest.destAddress ?? "Destination"}
+              </Text>
             </View>
           </View>
 
-          <Text style={styles.requestMeta}>5 min away · 12 km trip</Text>
+          <Text style={styles.requestMeta}>
+            {rideRequest.rideType} · ₦
+            {rideRequest.estimatedPrice?.toLocaleString()}
+          </Text>
 
           <View style={styles.actionRow}>
             <TouchableOpacity
               style={styles.rejectBtn}
-              onPress={() => setRideRequest(false)}
+              onPress={() => setRideRequest(null)}
             >
               <Ionicons name="close" size={20} color={COLORS.primary} />
               <Text style={styles.rejectText}>Decline</Text>
@@ -84,8 +147,16 @@ export default function DriverHome() {
 
             <TouchableOpacity
               style={styles.acceptBtn}
-              onPress={() => {
-                setRideRequest(false);
+              onPress={async () => {
+                const token = await AsyncStorage.getItem("token");
+                await fetch(
+                  `${process.env.EXPO_PUBLIC_API_URL}/api/v1/bookings/${rideRequest.id}/accept`,
+                  {
+                    method: "PATCH",
+                    headers: { Authorization: `Bearer ${token}` },
+                  },
+                );
+                setRideRequest(null);
                 router.push("/(driver)/trip/active");
               }}
             >
