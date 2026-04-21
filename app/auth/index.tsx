@@ -19,6 +19,7 @@ import { COLORS, SPACING, RADIUS } from "../../constants/theme";
 import Input from "../../components/Input";
 import { loginUser } from "../../services/api"; // ← real API
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { registerForPushNotifications } from "../../services/notifications";
 
 export default function Login() {
   const [phone, setPhone] = useState("");
@@ -72,6 +73,7 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
+    registerForPushNotifications().catch(console.warn);
   };
 
   return (

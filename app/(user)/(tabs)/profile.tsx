@@ -8,13 +8,31 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS, RADIUS, SPACING } from "../../../constants/theme";
+import { router } from "expo-router";
 
 const MENU_ITEMS = [
-  { label: "Payment Methods", icon: "card-outline" },
-  { label: "Ride History", icon: "time-outline" },
-  { label: "Notifications", icon: "notifications-outline" },
-  { label: "Help & Support", icon: "help-circle-outline" },
-  { label: "Settings", icon: "settings-outline" },
+  { label: "Payment Methods", icon: "card-outline", route: "/(user)/payment/" },
+  {
+    label: "Ride History",
+    icon: "time-outline",
+    route: "/(user)/(tabs)/rides",
+  },
+  {
+    label: "Notifications",
+    icon: "notifications-outline",
+    route: "/(user)/notifications",
+  },
+  {
+    label: "Help & Support",
+    icon: "help-circle-outline",
+    route: "/(user)/help",
+  },
+  {
+    label: "Help & Support",
+    icon: "help-circle-outline",
+    route: "/(user)/help",
+  },
+  { label: "Settings", icon: "settings-outline", route: null },
 ];
 
 export default function Profile() {
@@ -41,7 +59,11 @@ export default function Profile() {
         {/* Menu */}
         <View style={styles.menu}>
           {MENU_ITEMS.map((item) => (
-            <TouchableOpacity key={item.label} style={styles.menuItem}>
+            <TouchableOpacity
+              key={item.label}
+              style={styles.menuItem}
+              onPress={() => item.route && router.push(item.route as any)}
+            >
               <View style={styles.menuIcon}>
                 <Ionicons
                   name={item.icon as any}

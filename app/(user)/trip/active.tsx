@@ -1,31 +1,97 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { COLORS, RADIUS, SPACING } from "../../../constants/theme";
+import { cancelBooking } from "../../../services/api";
+import { getSocket } from "../../../services/socket";
 import { useRideStore } from "../../../store/useRideStore";
 
-const MOCK_DRIVER_LOCATION = { latitude: 6.338, longitude: 5.62 };
-
 export default function ActiveTrip() {
-  const { selectedRide, destination } = useRideStore();
+  const { selectedRide, destination, pickup } = useRideStore();
+
+  const [driverLocation, setDriverLocation] = useState({
+    latitude: 6.338,
+    longitude: 5.62,
+  });
+  const [statusText, setStatusText] = useState("Driver is on the way");
+  const [driverName, setDriverName] = useState("Emmanuel K.");
+  const [driverSub, setDriverSub] = useState("Toyota Corolla · KJA-234EG");
+  const [bookingId, setBookingId] = useState<string | null>(null);
+  const socket = getSocket();
+
+  useEffect(() => {
+    // Driver sends live location updates
+    socket.on(
+      "driver:location",
+      (coords: { latitude: number; longitude: number }) => {
+        setDriverLocation(coords);
+      },
+    );
+
+    // Driver has arrived / trip is in progress
+    socket.on("ride:accepted", (booking: any) => {
+      setBookingId(booking.id ?? booking.bookingId);
+      setStatusText("Driver confirmed — on the way!");
+      if (booking.driver?.user?.fullName) {
+        setDriverName(booking.driver.user.fullName);
+      }
+      if (booking.driver?.vehicle) {
+        const v = booking.driver.vehicle;
+        setDriverSub(`${v.make} ${v.model} · ${v.plateNumber}`);
+      }
+    });
+
+    // Trip is done — navigate to rating
+    socket.on("ride:completed", (booking: any) => {
+      const id = booking.id ?? booking.bookingId;
+      const name = booking.driver?.user?.fullName ?? "";
+      router.replace({
+        pathname: "/(user)/trip/rating",
+        params: { bookingId: id, driverName: name },
+      });
+    });
+
+    // Driver cancelled
+    socket.on("ride:cancelled", () => {
+      setStatusText("Ride was cancelled");
+      setTimeout(() => router.replace("/(user)/(tabs)"), 2000);
+    });
+
+    return () => {
+      socket.off("driver:location");
+      socket.off("ride:accepted");
+      socket.off("ride:completed");
+      socket.off("ride:cancelled");
+    };
+  }, []);
+
+  const handleCancel = async () => {
+    try {
+      if (bookingId) await cancelBooking(bookingId);
+    } catch {
+      // fail silently — still navigate away
+    } finally {
+      router.replace("/(user)/(tabs)");
+    }
+  };
 
   return (
     <View style={styles.container}>
-      {/* Map */}
       <MapView
         style={styles.map}
         initialRegion={{
-          latitude: 6.335,
-          longitude: 5.6037,
+          latitude: driverLocation.latitude,
+          longitude: driverLocation.longitude,
           latitudeDelta: 0.04,
           longitudeDelta: 0.04,
         }}
         showsUserLocation
       >
-        <Marker coordinate={MOCK_DRIVER_LOCATION} title="Driver">
+        <Marker coordinate={driverLocation} title="Driver">
           <View style={styles.driverPin}>
             <Ionicons name="car" size={18} color="#fff" />
           </View>
@@ -33,28 +99,24 @@ export default function ActiveTrip() {
         {destination && <Marker coordinate={destination} pinColor="#111" />}
       </MapView>
 
-      {/* Bottom card */}
       <SafeAreaView edges={["bottom"]} style={styles.card}>
         <View style={styles.statusRow}>
           <View style={styles.statusDot} />
-          <Text style={styles.statusText}>Driver is on the way</Text>
+          <Text style={styles.statusText}>{statusText}</Text>
         </View>
 
         <Text style={styles.eta}>Arrives in ~4 min</Text>
 
         <View style={styles.divider} />
 
-        {/* Driver info */}
         <View style={styles.driverRow}>
           <View style={styles.driverAvatar}>
             <Ionicons name="person" size={22} color={COLORS.primary} />
           </View>
-
           <View style={styles.driverInfo}>
-            <Text style={styles.driverName}>Emmanuel K.</Text>
-            <Text style={styles.driverSub}>Toyota Corolla · KJA-234EG</Text>
+            <Text style={styles.driverName}>{driverName}</Text>
+            <Text style={styles.driverSub}>{driverSub}</Text>
           </View>
-
           <View style={styles.driverActions}>
             <TouchableOpacity style={styles.actionBtn}>
               <Ionicons name="call" size={18} color={COLORS.primary} />
@@ -65,7 +127,6 @@ export default function ActiveTrip() {
           </View>
         </View>
 
-        {/* Ride info */}
         {selectedRide && (
           <View style={styles.rideInfoRow}>
             <Ionicons name="car-outline" size={16} color="#666" />
@@ -75,10 +136,7 @@ export default function ActiveTrip() {
           </View>
         )}
 
-        <TouchableOpacity
-          style={styles.cancelBtn}
-          onPress={() => router.replace("/(user)/(tabs)")}
-        >
+        <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
           <Text style={styles.cancelText}>Cancel Ride</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -89,7 +147,6 @@ export default function ActiveTrip() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
-
   driverPin: {
     width: 36,
     height: 36,
@@ -99,7 +156,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 4,
   },
-
   card: {
     backgroundColor: "#fff",
     paddingHorizontal: SPACING.lg,
@@ -125,23 +181,14 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: "#22C55E",
   },
-  statusText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#22C55E",
-  },
+  statusText: { fontSize: 14, fontWeight: "600", color: "#22C55E" },
   eta: {
     fontSize: 22,
     fontWeight: "800",
     color: "#111",
     marginBottom: SPACING.md,
   },
-  divider: {
-    height: 1,
-    backgroundColor: "#EAEAEA",
-    marginBottom: SPACING.md,
-  },
-
+  divider: { height: 1, backgroundColor: "#EAEAEA", marginBottom: SPACING.md },
   driverRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -161,7 +208,6 @@ const styles = StyleSheet.create({
   driverInfo: { flex: 1 },
   driverName: { fontWeight: "700", fontSize: 16, color: "#111" },
   driverSub: { fontSize: 13, color: "#666", marginTop: 2 },
-
   driverActions: { flexDirection: "row", gap: SPACING.sm },
   actionBtn: {
     width: 40,
@@ -173,7 +219,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#FFD6DA",
   },
-
   rideInfoRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -184,7 +229,6 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.sm,
   },
   rideInfoText: { fontSize: 13, color: "#555" },
-
   cancelBtn: {
     padding: SPACING.md,
     borderRadius: RADIUS.md,
@@ -192,9 +236,5 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
     alignItems: "center",
   },
-  cancelText: {
-    color: COLORS.primary,
-    fontWeight: "600",
-    fontSize: 15,
-  },
+  cancelText: { color: COLORS.primary, fontWeight: "600", fontSize: 15 },
 });

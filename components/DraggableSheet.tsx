@@ -9,7 +9,7 @@ import { RADIUS, SPACING } from "../constants/theme";
 
 const MAX_TRANSLATE_Y = -300;
 
-export default function DraggableSheet({ children }) {
+export default function DraggableSheet({ children }: any) {
   const translateY = useSharedValue(0);
 
   const gesture = Gesture.Pan()
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     width: "100%",
-    height: 350,
+    height: 200,
     backgroundColor: "#fff",
     borderTopLeftRadius: RADIUS.lg,
     borderTopRightRadius: RADIUS.lg,

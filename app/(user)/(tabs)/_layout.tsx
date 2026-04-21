@@ -1,8 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { COLORS } from "../../../constants/theme";
+import { useState } from "react";
+import { View, Text } from "react-native";
 
 export default function UserTabs() {
+  const [unreadCount] = useState(2);
   return (
     <Tabs
       screenOptions={{
@@ -46,7 +49,30 @@ export default function UserTabs() {
         options={{
           title: "Profile",
           tabBarIcon: ({ color }) => (
-            <Ionicons name="person-outline" size={22} color={color} />
+            <View>
+              <Ionicons name="person-outline" size={22} color={color} />
+              {unreadCount > 0 && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -4,
+                    right: -8,
+                    backgroundColor: COLORS.primary,
+                    width: 16,
+                    height: 16,
+                    borderRadius: 8,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{ color: "#fff", fontSize: 9, fontWeight: "800" }}
+                  >
+                    {unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
           ),
         }}
       />

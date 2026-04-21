@@ -22,14 +22,17 @@ const MENU_SECTIONS = [
         label: "My Vehicle",
         icon: "car-outline",
         value: "Toyota Corolla · KJA-234EG",
+        route: null,
       },
       {
         label: "Documents",
         icon: "document-text-outline",
         value: "All verified",
+        route: "/(driver)/documents",
       },
     ],
   },
+
   {
     title: "Payments",
     items: [
@@ -47,6 +50,16 @@ const MENU_SECTIONS = [
       { label: "Help Center", icon: "help-circle-outline" },
       { label: "Report an Issue", icon: "flag-outline" },
       { label: "Terms & Privacy", icon: "shield-outline" },
+      {
+        label: "Help Center",
+        icon: "help-circle-outline",
+        route: "/(driver)/help",
+      },
+      {
+        label: "Notifications",
+        icon: "notifications-outline",
+        route: "/(driver)/notifications",
+      },
     ],
   },
 ];
@@ -154,7 +167,15 @@ export default function DriverProfile() {
             <View style={styles.menuCard}>
               {section.items.map((item, ii) => (
                 <View key={item.label}>
-                  <TouchableOpacity style={styles.menuItem}>
+                  <TouchableOpacity
+                    key={item.label}
+                    style={styles.menuItem}
+                    onPress={() =>
+                      "route" in item &&
+                      item.route &&
+                      router.push(item.route as any)
+                    }
+                  >
                     <View style={styles.menuIcon}>
                       <Ionicons
                         name={item.icon as any}
