@@ -3,7 +3,7 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export const BASE_URL = "http://192.168.43.1:5000/api/v1";
+export const BASE_URL = "http://192.168.18.10:5000/api/v1";
 // ↑ Change this to your Railway URL when deployed.
 // For local dev use: "http://192.168.x.x:5000/api/v1"  ← your machine's local IP, not localhost
 

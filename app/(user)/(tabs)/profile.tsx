@@ -27,11 +27,7 @@ const MENU_ITEMS = [
     icon: "help-circle-outline",
     route: "/(user)/help",
   },
-  {
-    label: "Help & Support",
-    icon: "help-circle-outline",
-    route: "/(user)/help",
-  },
+
   { label: "Settings", icon: "settings-outline", route: null },
 ];
 

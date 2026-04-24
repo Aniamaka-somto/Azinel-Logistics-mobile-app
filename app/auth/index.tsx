@@ -41,39 +41,28 @@ export default function Login() {
 
     setLoading(true);
     try {
-      const res = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/auth/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone, password }),
-        },
-      );
+      const result = await loginUser({ phone, password });
 
-      const json = await res.json();
-
-      if (!res.ok) {
-        setError(json.message ?? "Invalid credentials.");
-        return;
+      // loginUser already saves token + user to AsyncStorage
+      // Just handle push notifications and routing
+      try {
+        await registerForPushNotifications();
+      } catch {
+        // Non-critical, ignore
       }
 
-      await AsyncStorage.setItem("token", json.data.token);
-      await AsyncStorage.setItem("userId", json.data.user.id);
-      await AsyncStorage.setItem("userRole", json.data.user.role);
-      await AsyncStorage.setItem("userName", json.data.user.fullName);
-
-      // Route based on role
-      if (json.data.user.role === "DRIVER") {
+      if (result.user.role === "DRIVER") {
         router.replace("/(driver)/(tabs)");
       } else {
         router.replace("/(user)/(tabs)");
       }
-    } catch (e) {
-      setError("Could not connect to server. Check your connection.");
+    } catch (e: any) {
+      setError(
+        e.message ?? "Could not connect to server. Check your connection.",
+      );
     } finally {
       setLoading(false);
     }
-    registerForPushNotifications().catch(console.warn);
   };
 
   return (

@@ -16,11 +16,17 @@ Notifications.setNotificationHandler({
 });
 
 export async function registerForPushNotifications(): Promise<string | null> {
+  // Check if running in Expo Go
+  const isExpoGo = Constants.appOwnership === "expo";
+  if (isExpoGo) {
+    console.log("Push notifications not supported in Expo Go — skipping.");
+    return null;
+  }
+
   if (!Device.isDevice) {
     console.warn("Push notifications only work on physical devices.");
     return null;
   }
-
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
 

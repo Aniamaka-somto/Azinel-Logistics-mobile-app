@@ -47,7 +47,6 @@ const MENU_SECTIONS = [
   {
     title: "Support",
     items: [
-      { label: "Help Center", icon: "help-circle-outline" },
       { label: "Report an Issue", icon: "flag-outline" },
       { label: "Terms & Privacy", icon: "shield-outline" },
       {

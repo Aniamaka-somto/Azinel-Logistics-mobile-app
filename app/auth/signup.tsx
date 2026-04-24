@@ -49,41 +49,24 @@ export default function Signup() {
 
     setLoading(true);
     try {
-      const res = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/auth/register`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fullName,
-            phone,
-            email: email || undefined,
-            password,
-            role: role.toUpperCase(),
-          }),
-        },
-      );
+      const result = await registerUser({
+        fullName,
+        phone,
+        email: email || undefined,
+        password,
+        role: role.toUpperCase() as "USER" | "DRIVER",
+      });
 
-      const json = await res.json();
-
-      if (!res.ok) {
-        setError(json.message ?? "Registration failed.");
-        return;
-      }
-
-      await AsyncStorage.setItem("token", json.data.token);
-      await AsyncStorage.setItem("userId", json.data.user.id);
-      await AsyncStorage.setItem("userRole", json.data.user.role);
-      await AsyncStorage.setItem("userName", json.data.user.fullName);
-
-      // Route based on role
-      if (json.data.user.role === "DRIVER") {
+      // registerUser already saves token + user to AsyncStorage
+      if (result.user.role === "DRIVER") {
         router.replace("/(driver)/(tabs)");
       } else {
         router.replace("/(user)/(tabs)");
       }
-    } catch (e) {
-      setError("Could not connect to server. Check your connection.");
+    } catch (e: any) {
+      setError(
+        e.message ?? "Could not connect to server. Check your connection.",
+      );
     } finally {
       setLoading(false);
     }
