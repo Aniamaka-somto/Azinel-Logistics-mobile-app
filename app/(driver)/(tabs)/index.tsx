@@ -244,13 +244,13 @@ export default function DriverHome() {
         }}
         showsUserLocation
       >
-        {driverLocation && (
+        {/* {driverLocation && (
           <Marker coordinate={driverLocation}>
             <View style={styles.driverPin}>
               <Ionicons name="car" size={16} color="#fff" />
             </View>
           </Marker>
-        )}
+        )} */}
       </MapView>
 
       {/* Top bar */}
