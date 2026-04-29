@@ -16,6 +16,7 @@ import { useState } from "react";
 
 import { COLORS, SPACING, RADIUS } from "../../../constants/theme";
 import { rateRide } from "../../../services/api";
+import { useRideStore } from "../../../store/useRideStore";
 
 const TIPS = [0, 100, 200, 500];
 
@@ -34,6 +35,7 @@ export default function TripRating() {
     driverName: string;
     vehicleInfo: string;
   }>();
+  const { resetRide } = useRideStore();
 
   const [rating, setRating] = useState(0);
   const [hoveredStar, setHoveredStar] = useState(0);
@@ -57,6 +59,7 @@ export default function TripRating() {
     setLoading(true);
     try {
       await rateRide(bookingId, rating);
+      resetRide();
       setSubmitted(true);
     } catch (err: any) {
       Alert.alert("Error", err.message ?? "Could not submit rating.");
@@ -262,7 +265,10 @@ export default function TripRating() {
 
         <TouchableOpacity
           style={styles.skipBtn}
-          onPress={() => router.replace("/(user)/(tabs)")}
+          onPress={() => {
+            resetRide();
+            router.replace("/(user)/(tabs)");
+          }}
         >
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>

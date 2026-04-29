@@ -59,7 +59,7 @@ export default function RideOptions() {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const { pickup, destination, setRide } = useRideStore();
+  const { pickup, destination, setRide, resetRide } = useRideStore();
 
   // Cleanup on unmount
   useEffect(() => {
@@ -91,9 +91,24 @@ export default function RideOptions() {
       console.log("PICKUP:", JSON.stringify(pickup)); // ← add
       console.log("DESTINATION:", JSON.stringify(destination));
       // Create booking on backend
+      if (!pickup || !destination) {
+        setBookingState("idle");
+        Alert.alert(
+          "Missing location",
+          "Please go back and select your destination.",
+        );
+        return;
+      }
+      console.log("🚀 Sending booking payload:", {
+        pickup,
+        destination,
+        rideType: ride.name,
+        price: ride.price,
+      });
+
       const res = await confirmRideBooking({
-        pickup: pickup ?? { latitude: 6.335, longitude: 5.6037 },
-        destination: destination ?? { latitude: 6.374, longitude: 5.633 },
+        pickup,
+        destination,
         rideType: ride.name,
         price: ride.price,
       });
@@ -159,6 +174,7 @@ export default function RideOptions() {
     socket?.off("ride:accepted");
     socket?.off("booking:no_drivers");
     socket?.off("booking:dispatching");
+    resetRide();
     setBookingState("idle");
     setBookingId(null);
     setElapsed(0);

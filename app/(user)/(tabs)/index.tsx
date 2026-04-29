@@ -16,13 +16,6 @@ import { COLORS, RADIUS, SPACING } from "../../../constants/theme";
 import { useRideStore } from "../../../store/useRideStore";
 import { BASE_URL } from "../../../services/api";
 
-const INITIAL_REGION = {
-  latitude: 6.335,
-  longitude: 5.6037,
-  latitudeDelta: 0.05,
-  longitudeDelta: 0.05,
-};
-
 interface NearbyDriver {
   id: string;
   latitude: number;
@@ -107,13 +100,9 @@ export default function Home() {
       <MapView
         ref={mapRef}
         style={styles.map}
-        initialRegion={INITIAL_REGION}
         showsUserLocation
         showsMyLocationButton={false}
       >
-        {/* Passenger's pickup marker */}
-        {pickup && <Marker coordinate={pickup} pinColor={COLORS.primary} />}
-
         {/* Passenger's destination marker */}
         {destination && <Marker coordinate={destination} pinColor="#111" />}
 
@@ -127,9 +116,11 @@ export default function Home() {
             }}
             title={driver.fullName}
             description={`⭐ ${driver.rating}`}
-            pinColor="#E60023"
-            tracksViewChanges={false}
-          />
+            // pinColor is ignored when using a custom child. Remove it.
+            tracksViewChanges={true} // Ensures the map properly renders custom React Native views
+          >
+            <DriverMarker vehicleClass={driver.vehicleClass} />
+          </Marker>
         ))}
       </MapView>
 

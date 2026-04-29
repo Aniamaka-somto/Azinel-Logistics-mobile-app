@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
@@ -11,28 +11,56 @@ import { getSocket } from "../../../services/socket";
 import { useRideStore } from "../../../store/useRideStore";
 
 export default function ActiveTrip() {
-  const { selectedRide, destination, pickup } = useRideStore();
+  const { selectedRide, destination, pickup, resetRide } = useRideStore();
+  const { bookingId: paramBookingId, driverInfo: paramDriverInfo } =
+    useLocalSearchParams<{ bookingId: string; driverInfo: string }>();
 
-  const [driverLocation, setDriverLocation] = useState({
-    latitude: 6.338,
-    longitude: 5.62,
-  });
+  const mapRef = useRef<MapView>(null);
+
+  const [driverLocation, setDriverLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   const [statusText, setStatusText] = useState("Driver is on the way");
-  const [driverName, setDriverName] = useState("Emmanuel K.");
-  const [driverSub, setDriverSub] = useState("Toyota Corolla · KJA-234EG");
-  const [bookingId, setBookingId] = useState<string | null>(null);
-  const socket = getSocket();
+  const [driverName, setDriverName] = useState("Your Driver");
+  const [driverSub, setDriverSub] = useState("Assigning vehicle...");
+  const [bookingId, setBookingId] = useState<string | null>(
+    paramBookingId ?? null,
+  );
+
+  // Parse driver info passed from ride-options found state
+  useEffect(() => {
+    if (paramDriverInfo) {
+      try {
+        const info = JSON.parse(paramDriverInfo);
+        if (info?.user?.fullName) setDriverName(info.user.fullName);
+        if (info?.vehicle) {
+          const v = info.vehicle;
+          setDriverSub(`${v.make} ${v.model} · ${v.plateNumber}`);
+        }
+      } catch {
+        // ignore parse errors
+      }
+    }
+  }, [paramDriverInfo]);
 
   useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
     // Driver sends live location updates
     socket.on(
       "driver:location",
       (coords: { latitude: number; longitude: number }) => {
         setDriverLocation(coords);
+        mapRef.current?.animateToRegion(
+          { ...coords, latitudeDelta: 0.03, longitudeDelta: 0.03 },
+          600,
+        );
       },
     );
 
-    // Driver has arrived / trip is in progress
+    // Ride accepted — update driver info
     socket.on("ride:accepted", (booking: any) => {
       setBookingId(booking.id ?? booking.bookingId);
       setStatusText("Driver confirmed — on the way!");
@@ -45,10 +73,11 @@ export default function ActiveTrip() {
       }
     });
 
-    // Trip is done — navigate to rating
+    // Trip completed
     socket.on("ride:completed", (booking: any) => {
+      resetRide();
       const id = booking.id ?? booking.bookingId;
-      const name = booking.driver?.user?.fullName ?? "";
+      const name = booking.driver?.user?.fullName ?? driverName;
       router.replace({
         pathname: "/(user)/trip/rating",
         params: { bookingId: id, driverName: name },
@@ -57,6 +86,7 @@ export default function ActiveTrip() {
 
     // Driver cancelled
     socket.on("ride:cancelled", () => {
+      resetRide();
       setStatusText("Ride was cancelled");
       setTimeout(() => router.replace("/(user)/(tabs)"), 2000);
     });
@@ -69,12 +99,37 @@ export default function ActiveTrip() {
     };
   }, []);
 
+  // Center map on pickup/destination when screen opens
+  useEffect(() => {
+    if (pickup && destination) {
+      const midLat = (pickup.latitude + destination.latitude) / 2;
+      const midLng = (pickup.longitude + destination.longitude) / 2;
+      const latDelta =
+        Math.abs(pickup.latitude - destination.latitude) * 2 + 0.02;
+      const lngDelta =
+        Math.abs(pickup.longitude - destination.longitude) * 2 + 0.02;
+
+      setTimeout(() => {
+        mapRef.current?.animateToRegion(
+          {
+            latitude: midLat,
+            longitude: midLng,
+            latitudeDelta: latDelta,
+            longitudeDelta: lngDelta,
+          },
+          800,
+        );
+      }, 500);
+    }
+  }, []);
+
   const handleCancel = async () => {
     try {
       if (bookingId) await cancelBooking(bookingId);
     } catch {
-      // fail silently — still navigate away
+      // fail silently
     } finally {
+      resetRide();
       router.replace("/(user)/(tabs)");
     }
   };
@@ -82,21 +137,21 @@ export default function ActiveTrip() {
   return (
     <View style={styles.container}>
       <MapView
+        ref={mapRef}
         style={styles.map}
-        initialRegion={{
-          latitude: driverLocation.latitude,
-          longitude: driverLocation.longitude,
-          latitudeDelta: 0.04,
-          longitudeDelta: 0.04,
-        }}
         showsUserLocation
+        showsMyLocationButton={false}
       >
-        <Marker coordinate={driverLocation} title="Driver">
-          <View style={styles.driverPin}>
-            <Ionicons name="car" size={18} color="#fff" />
-          </View>
-        </Marker>
-        {destination && <Marker coordinate={destination} pinColor="#111" />}
+        {driverLocation && (
+          <Marker coordinate={driverLocation} title="Driver">
+            <View style={styles.driverPin}>
+              <Ionicons name="car" size={18} color="#fff" />
+            </View>
+          </Marker>
+        )}
+        {destination && (
+          <Marker coordinate={destination} pinColor={COLORS.primary} />
+        )}
       </MapView>
 
       <SafeAreaView edges={["bottom"]} style={styles.card}>
@@ -151,10 +206,12 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: COLORS.primary,
+    backgroundColor: "#111",
     justifyContent: "center",
     alignItems: "center",
     elevation: 4,
+    borderWidth: 2,
+    borderColor: "#fff",
   },
   card: {
     backgroundColor: "#fff",

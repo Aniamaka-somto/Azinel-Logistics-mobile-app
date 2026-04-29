@@ -18,6 +18,7 @@ interface RideStore {
   setPickup: (pickup: Coordinate) => void;
   setDestination: (destination: Coordinate) => void;
   setRide: (ride: Ride) => void;
+  resetRide: () => void;
 }
 
 export const useRideStore = create<RideStore>((set) => ({
@@ -27,4 +28,11 @@ export const useRideStore = create<RideStore>((set) => ({
   setPickup: (pickup) => set({ pickup }),
   setDestination: (destination) => set({ destination }),
   setRide: (ride) => set({ selectedRide: ride }),
+  resetRide: () =>
+    set({
+      // ← add this
+      destination: null,
+      selectedRide: null,
+      // keep pickup — it's current location, still valid
+    }),
 }));

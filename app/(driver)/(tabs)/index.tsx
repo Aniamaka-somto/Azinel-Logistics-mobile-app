@@ -194,12 +194,20 @@ export default function DriverHome() {
   };
 
   const handleAccept = async () => {
-    if (!rideRequest) return;
-    if (countdownInterval.current) clearInterval(countdownInterval.current);
     try {
       await acceptBooking(rideRequest.id);
       setRideRequest(null);
-      router.push("/(driver)/trip/active");
+      router.push({
+        pathname: "/(driver)/trip/active",
+        params: {
+          bookingId: rideRequest.id,
+          passengerName: rideRequest.user?.fullName ?? "Passenger",
+          pickupAddress: rideRequest.pickupAddress ?? "Pickup location",
+          destAddress: rideRequest.destAddress ?? "Destination",
+          estimatedPrice: rideRequest.estimatedPrice?.toString() ?? "0",
+          rideType: rideRequest.rideType ?? "Ride",
+        },
+      });
     } catch (err: any) {
       if (err.message?.includes("taken")) {
         Alert.alert("Too slow!", "Another driver accepted this ride first.");
@@ -236,24 +244,14 @@ export default function DriverHome() {
 
   return (
     <View style={styles.container}>
-      <MapView
-        ref={mapRef}
-        style={styles.map}
-        initialRegion={{
-          latitude: 6.335,
-          longitude: 5.6037,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        }}
-        showsUserLocation
-      >
-        {/* {driverLocation && (
+      <MapView ref={mapRef} style={styles.map} showsMyLocationButton={false}>
+        {driverLocation && (
           <Marker coordinate={driverLocation}>
             <View style={styles.driverPin}>
               <Ionicons name="car" size={16} color="#fff" />
             </View>
           </Marker>
-        )} */}
+        )}
       </MapView>
 
       {/* Top bar */}
