@@ -1,6 +1,7 @@
 import {
   View,
   Text,
+  TextInput,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
@@ -10,14 +11,83 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import * as Location from "expo-location";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { COLORS, SPACING, RADIUS } from "../../../constants/theme";
 import { useIntercityStore } from "../../../store/useIntercityStore";
-import { searchPlaces, PlaceResult } from "../../../services/api";
-import Input from "../../../components/Input";
+import { BASE_URL } from "../../../services/api";
 
 type ActiveField = "origin" | "destination" | null;
+
+interface PlaceResult {
+  placeId: string;
+  mainText: string;
+  description: string;
+  lat?: number;
+  lng?: number;
+}
+
+// ─────────────────────────────────────────────
+// API helper — intercity mode, loose location bias
+// ─────────────────────────────────────────────
+
+async function searchIntercityPlaces(
+  query: string,
+  lat?: number,
+  lng?: number,
+): Promise<PlaceResult[]> {
+  if (!query.trim()) return [];
+  const token = await AsyncStorage.getItem("token");
+
+  const params = new URLSearchParams({ query, mode: "intercity" });
+  if (lat && lng) {
+    params.append("lat", String(lat));
+    params.append("lng", String(lng));
+  }
+
+  const res = await fetch(`${BASE_URL}/places/search?${params.toString()}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  const json = await res.json();
+  return json?.data ?? [];
+}
+
+async function getPlaceCoords(
+  placeId: string,
+  embeddedLat?: number,
+  embeddedLng?: number,
+): Promise<{ latitude: number; longitude: number; address: string }> {
+  // Nominatim shortcut — skip the extra round-trip
+  if (placeId.startsWith("nominatim_") && embeddedLat && embeddedLng) {
+    return { latitude: embeddedLat, longitude: embeddedLng, address: "" };
+  }
+
+  const token = await AsyncStorage.getItem("token");
+  const res = await fetch(
+    `${BASE_URL}/places/details/${encodeURIComponent(placeId)}`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    },
+  );
+  const json = await res.json();
+  return {
+    latitude: json?.data?.lat,
+    longitude: json?.data?.lng,
+    address: json?.data?.address ?? "",
+  };
+}
+
+// ─────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────
 
 export default function IntercityIndex() {
   const {
@@ -33,46 +103,100 @@ export default function IntercityIndex() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PlaceResult[]>([]);
   const [searching, setSearching] = useState(false);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
-  const handleSearch = useCallback(async (text: string) => {
-    setQuery(text);
-    if (text.trim().length < 2) {
-      setResults([]);
-      return;
-    }
-    setSearching(true);
-    try {
-      const data = await searchPlaces(text);
-      setResults(data);
-    } finally {
-      setSearching(false);
-    }
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Get user location on mount ──
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") return;
+        const loc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        setUserLocation({
+          latitude: loc.coords.latitude,
+          longitude: loc.coords.longitude,
+        });
+      } catch {
+        // gracefully skip
+      }
+    })();
   }, []);
 
-  const handleSelect = (place: PlaceResult) => {
-    // Extract city from address e.g. "Victoria Island, Lagos" → "Lagos"
-    const parts = place.address.split(",");
-    const city = parts[parts.length - 1].trim();
+  const handleSearch = useCallback(
+    async (text: string) => {
+      setQuery(text);
+      if (text.trim().length < 2) {
+        setResults([]);
+        return;
+      }
 
-    if (activeField === "origin") {
-      setOriginArea({
-        name: place.address,
-        placeId: place.placeId,
-        coordinates: place.coordinates,
-      });
-      setOriginCity(city);
-    } else {
-      setDestinationArea({
-        name: place.address,
-        placeId: place.placeId,
-        coordinates: place.coordinates,
-      });
-      setDestinationCity(city);
+      if (searchTimeout.current) clearTimeout(searchTimeout.current);
+      searchTimeout.current = setTimeout(async () => {
+        setSearching(true);
+        try {
+          const data = await searchIntercityPlaces(
+            text,
+            userLocation?.latitude,
+            userLocation?.longitude,
+          );
+          setResults(data);
+        } finally {
+          setSearching(false);
+        }
+      }, 400);
+    },
+    [userLocation],
+  );
+
+  const handleSelect = async (place: PlaceResult) => {
+    setSearching(true);
+    try {
+      const coords = await getPlaceCoords(place.placeId, place.lat, place.lng);
+      const address = coords.address || place.description;
+
+      // Extract city: last meaningful part of the address string
+      const parts = place.description.split(",");
+      const city =
+        parts[parts.length - 2]?.trim() ??
+        parts[parts.length - 1]?.trim() ??
+        "";
+
+      if (activeField === "origin") {
+        setOriginArea({
+          name: place.mainText || place.description,
+          placeId: place.placeId,
+          coordinates: {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+          },
+        });
+        setOriginCity(city);
+      } else {
+        setDestinationArea({
+          name: place.mainText || place.description,
+          placeId: place.placeId,
+          coordinates: {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+          },
+        });
+        setDestinationCity(city);
+      }
+    } catch (err) {
+      console.warn("Could not resolve place:", err);
+    } finally {
+      setSearching(false);
+      setQuery("");
+      setResults([]);
+      setActiveField(null);
     }
-
-    setQuery("");
-    setResults([]);
-    setActiveField(null);
   };
 
   const canProceed = originArea && destinationArea;
@@ -91,7 +215,7 @@ export default function IntercityIndex() {
         entering={FadeInDown.duration(400)}
         style={styles.routeCard}
       >
-        {/* Origin field */}
+        {/* Origin */}
         <TouchableOpacity
           style={styles.fieldRow}
           onPress={() => {
@@ -128,7 +252,7 @@ export default function IntercityIndex() {
 
         <View style={styles.fieldDivider} />
 
-        {/* Destination field */}
+        {/* Destination */}
         <TouchableOpacity
           style={styles.fieldRow}
           onPress={() => {
@@ -147,7 +271,7 @@ export default function IntercityIndex() {
               ]}
               numberOfLines={1}
             >
-              {destinationArea?.name ?? "Search destination"}
+              {destinationArea?.name ?? "Search destination city"}
             </Text>
           </View>
           {destinationArea && (
@@ -169,15 +293,16 @@ export default function IntercityIndex() {
         <Animated.View entering={FadeIn.duration(200)} style={styles.searchBox}>
           <View style={styles.searchInputRow}>
             <Ionicons name="search" size={16} color="#999" />
-            <Input
+            <TextInput
+              style={styles.searchInput}
               placeholder={
                 activeField === "origin"
                   ? "e.g. Victoria Island Lagos..."
-                  : "e.g. Maitama Abuja..."
+                  : "e.g. Maitama Abuja, Enugu city..."
               }
+              placeholderTextColor="#BBB"
               value={query}
               onChangeText={handleSearch}
-              style={styles.searchInput}
               autoFocus
             />
             {query.length > 0 && (
@@ -192,7 +317,19 @@ export default function IntercityIndex() {
             )}
           </View>
 
-          {/* Results */}
+          {/* Hint */}
+          <View style={styles.hintRow}>
+            <Ionicons
+              name="information-circle-outline"
+              size={13}
+              color="#BBB"
+            />
+            <Text style={styles.hintText}>
+              Search any city or area in Nigeria — e.g. &quot;Asaba&quot;,
+              &quot;Ikeja&quot;, &quot;Owerri&quot;
+            </Text>
+          </View>
+
           {searching && (
             <View style={styles.loadingRow}>
               <ActivityIndicator size="small" color={COLORS.primary} />
@@ -223,8 +360,12 @@ export default function IntercityIndex() {
                       />
                     </View>
                     <View style={styles.resultInfo}>
-                      <Text style={styles.resultName}>{place.name}</Text>
-                      <Text style={styles.resultAddress}>{place.address}</Text>
+                      <Text style={styles.resultName} numberOfLines={1}>
+                        {place.mainText || place.description}
+                      </Text>
+                      <Text style={styles.resultAddress} numberOfLines={1}>
+                        {place.description}
+                      </Text>
                     </View>
                   </TouchableOpacity>
                 </Animated.View>
@@ -253,7 +394,7 @@ export default function IntercityIndex() {
         </Animated.View>
       )}
 
-      {/* Summary — show when both selected and not searching */}
+      {/* Summary */}
       {canProceed && !activeField && (
         <Animated.View
           entering={FadeInDown.duration(300)}
@@ -360,11 +501,20 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    borderWidth: 0,
-    backgroundColor: "transparent",
-    padding: 0,
     fontSize: 15,
+    color: "#111",
+    paddingVertical: 4,
   },
+  hintRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F8F8F8",
+  },
+  hintText: { fontSize: 11, color: "#BBB", flex: 1 },
 
   loadingRow: {
     flexDirection: "row",

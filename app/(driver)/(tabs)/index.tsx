@@ -126,7 +126,10 @@ export default function DriverHome() {
       if (!online) return;
       try {
         const profile = await getDriverProfile();
+        console.log("DRIVER PROFILE ID:", profile.id); // ← add this
+        console.log("DRIVER USER ID:", profile.userId);
         const socket = await connectSocket(profile.id, "driver");
+        console.log("SOCKET CONNECTED:", socket.id);
 
         socket.on("booking:request", (booking: any) => {
           setRideRequest(booking);

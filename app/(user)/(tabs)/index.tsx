@@ -40,7 +40,7 @@ export default function Home() {
   const [serviceMode, setServiceMode] = useState<ServiceMode>("ride");
   const [nearbyDrivers, setNearbyDrivers] = useState<NearbyDriver[]>([]);
   const mapRef = useRef<MapView>(null);
-  const { pickup, destination } = useRideStore();
+  const { pickup, destination, setPickup } = useRideStore();
 
   // Get user location + start polling drivers
   useEffect(() => {
@@ -62,6 +62,7 @@ export default function Home() {
       };
 
       setLocation(coords);
+      setPickup(coords);
 
       mapRef.current?.animateToRegion(
         { ...coords, latitudeDelta: 0.04, longitudeDelta: 0.04 },

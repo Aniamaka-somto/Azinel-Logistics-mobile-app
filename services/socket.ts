@@ -56,8 +56,10 @@ export const connectSocket = async (
     console.log("Socket connected:", s.id);
     if (role === "user") {
       s.emit("user:join", userId);
+      console.log("Emitting user:join with:", userId);
     } else {
       s.emit("driver:online", userId);
+      console.log("Emitting driver:online with:", userId);
     }
   });
 

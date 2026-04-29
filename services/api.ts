@@ -332,22 +332,17 @@ export async function getActiveRide(): Promise<BookingResponse | null> {
 
 export async function searchPlaces(query: string): Promise<PlaceResult[]> {
   if (!query.trim()) return [];
-
   try {
     const results = await get<any[]>(
       `/places/search?query=${encodeURIComponent(query)}`,
     );
-
     return results.map((p: any) => ({
       placeId: p.placeId,
-      name: p.mainText || p.description,
+      name: p.mainText ?? p.description,
       address: p.description,
-      // Coordinates come from a follow-up getPlaceDetails call
-      // We return empty coords here and resolve on selection
       coordinates: { latitude: 0, longitude: 0 },
     }));
   } catch {
-    // Fallback to empty — don't crash the search UI
     return [];
   }
 }

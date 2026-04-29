@@ -82,11 +82,14 @@ export default function RideOptions() {
 
     try {
       const user = await getStoredUser();
+      console.log("USER:", JSON.stringify(user));
+      console.log("USER:", JSON.stringify(user));
       if (!user) {
         router.replace("/auth");
         return;
       }
-
+      console.log("PICKUP:", JSON.stringify(pickup)); // ← add
+      console.log("DESTINATION:", JSON.stringify(destination));
       // Create booking on backend
       const res = await confirmRideBooking({
         pickup: pickup ?? { latitude: 6.335, longitude: 5.6037 },
